@@ -2,24 +2,43 @@ package main
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/krishnadurai/aurora-test-auth/internal/cache"
+	"github.com/krishnadurai/aurora-test-auth/internal/interrupt"
+	"github.com/krishnadurai/aurora-test-auth/internal/logging"
 )
 
-func testRedis(ctx context.Context, cacheDB cache.Cache) {
-	setResult, err := cacheDB.Set(ctx, "test", "test", 1000000)
-	if err != nil {
-		fmt.Println(err)
+func main() {
+	ctx, done := interrupt.Context()
+	defer done()
+
+	if err := realMain(ctx); err != nil {
+		logger := logging.FromContext(ctx)
+		logger.Fatal(err)
 	}
-	fmt.Println(setResult)
-	cacheDB.Get(ctx, "test")
-	fmt.Println("Redis")
 }
 
-func main() {
-	ctx := context.Background()
+func testRedis(ctx context.Context, cacheDB cache.Cache) {
+	logger := logging.FromContext(ctx)
+	setResult, err := cacheDB.Set(ctx, "test", "test", 20000000)
+	if err != nil {
+		logger.Error("error")
+	}
+	logger.Info(setResult)
+
+	getResult, err := cacheDB.Get(ctx, "test")
+	if err != nil {
+		logger.Error(err)
+	}
+	logger.Info(getResult)
+}
+
+func realMain(ctx context.Context) error {
 	var config cache.Config
-	cacheDB, _ := cache.NewRedisCache(ctx, config.Cache())
+	cacheDB, err := cache.NewRedisCache(ctx, config.Cache())
+	if err != nil {
+		return err
+	}
 	testRedis(ctx, cacheDB)
+	return nil
 }
