@@ -2,23 +2,34 @@ package main
 
 import (
 	"context"
-
-	"github.com/krishnadurai/aurora-test-auth/internal/cache"
+	"github.com/krishnadurai/aurora-test-auth"
+	"github.com/krishnadurai/aurora-test-auth/internal/config"
 	"github.com/krishnadurai/aurora-test-auth/internal/interrupt"
 	"github.com/krishnadurai/aurora-test-auth/internal/logging"
 )
 
-func main() {
-	ctx, done := interrupt.Context()
-	defer done()
+var cfg config.Config
 
-	if err := realMain(ctx); err != nil {
-		logger := logging.FromContext(ctx)
+func main() {
+	ctx, cancel := interrupt.Context()
+	defer cancel()
+
+	logger := logging.FromContext(ctx)
+
+	var err error
+
+	cfg, err = config.LoadConfig(ctx, "config.yaml")
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	err = realMain(ctx)
+	if err != nil {
 		logger.Fatal(err)
 	}
 }
 
-func testRedis(ctx context.Context, cacheDB cache.Cache) {
+func testRedis(ctx context.Context, cacheDB aurora_test_auth.Cache) {
 	logger := logging.FromContext(ctx)
 	setResult, err := cacheDB.Set(ctx, "test", "test", 20000000)
 	if err != nil {
@@ -34,11 +45,6 @@ func testRedis(ctx context.Context, cacheDB cache.Cache) {
 }
 
 func realMain(ctx context.Context) error {
-	var config cache.Config
-	cacheDB, err := cache.NewRedisCache(ctx, config.Cache())
-	if err != nil {
-		return err
-	}
-	testRedis(ctx, cacheDB)
+	testRedis(ctx, cfg.Cache)
 	return nil
 }

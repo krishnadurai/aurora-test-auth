@@ -1,0 +1,6 @@
+# Configuration file
+config.yaml
+
+# Editor configuration folders
+.idea/
+.vscode/

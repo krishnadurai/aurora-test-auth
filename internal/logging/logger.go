@@ -2,6 +2,7 @@ package logging
 
 import (
 	"context"
+	"os"
 
 	"go.uber.org/zap"
 )
@@ -11,13 +12,19 @@ type loggerKey struct{}
 var fallbackLogger *zap.SugaredLogger
 
 func init() {
-	// Set up Stackdriver keys (see: https://cloud.google.com/run/docs/logging#special-fields)
-	config := zap.NewProductionConfig()
+	var config zap.Config
+	if os.Getenv("APP_ENV") == "dev" {
+		config = zap.NewDevelopmentConfig()
+	} else {
+		config = zap.NewProductionConfig()
+	}
+
 	config.EncoderConfig.MessageKey = "message"
 	config.EncoderConfig.LevelKey = "severity"
 	config.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
 
-	if logger, err := config.Build(); err != nil {
+	logger, err := config.Build()
+	if err != nil {
 		fallbackLogger = zap.NewNop().Sugar()
 	} else {
 		fallbackLogger = logger.Named("default").Sugar()

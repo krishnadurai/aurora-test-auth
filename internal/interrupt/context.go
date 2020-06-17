@@ -14,8 +14,8 @@ func Context() (context.Context, func()) {
 
 // WrappedContext returns a new context wrapping the provided context and
 // canceling it on the provided signals.
-func WrappedContext(ctx context.Context, signals ...os.Signal) (context.Context, func()) {
-	ctx, closer := context.WithCancel(ctx)
+func WrappedContext(ctx context.Context, signals ...os.Signal) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(ctx)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, signals...)
@@ -23,10 +23,10 @@ func WrappedContext(ctx context.Context, signals ...os.Signal) (context.Context,
 	go func() {
 		select {
 		case <-c:
-			closer()
+			cancel()
 		case <-ctx.Done():
 		}
 	}()
 
-	return ctx, closer
+	return ctx, cancel
 }
