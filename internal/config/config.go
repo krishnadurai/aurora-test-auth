@@ -3,7 +3,7 @@ package config
 import (
 	"context"
 	"fmt"
-	"github.com/krishnadurai/aurora-test-auth"
+	"github.com/krishnadurai/aurora-test-auth/internal/cache"
 	"github.com/krishnadurai/aurora-test-auth/internal/cache/redis"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
@@ -11,7 +11,7 @@ import (
 )
 
 type Config struct {
-	Cache aurora_test_auth.Cache
+	Cache cache.Cache
 }
 
 func LoadConfig(ctx context.Context, path string) (Config, error) {
@@ -53,7 +53,7 @@ func LoadConfig(ctx context.Context, path string) (Config, error) {
 	return cfg, nil
 }
 
-func DecodeCache(ctx context.Context, typeName string, node yaml.Node) (aurora_test_auth.Cache, error) {
+func DecodeCache(ctx context.Context, typeName string, node yaml.Node) (cache.Cache, error) {
 	switch typeName {
 	case "redis":
 		return redis.New(ctx, node)

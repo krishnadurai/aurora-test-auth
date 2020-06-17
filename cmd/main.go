@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"github.com/krishnadurai/aurora-test-auth"
+	"github.com/krishnadurai/aurora-test-auth/internal/cache"
 	"github.com/krishnadurai/aurora-test-auth/internal/config"
 	"github.com/krishnadurai/aurora-test-auth/internal/interrupt"
 	"github.com/krishnadurai/aurora-test-auth/internal/logging"
@@ -29,7 +29,7 @@ func main() {
 	}
 }
 
-func testRedis(ctx context.Context, cacheDB aurora_test_auth.Cache) {
+func testRedis(ctx context.Context, cacheDB cache.Cache) {
 	logger := logging.FromContext(ctx)
 	setResult, err := cacheDB.Set(ctx, "test", "test", 20000000)
 	if err != nil {

@@ -2,7 +2,7 @@ package redis
 
 import (
 	"context"
-	"github.com/krishnadurai/aurora-test-auth"
+	"github.com/krishnadurai/aurora-test-auth/internal/cache"
 	"gopkg.in/yaml.v3"
 	"time"
 
@@ -22,7 +22,7 @@ type Cache struct {
 }
 
 // Verify at compile-time that RedisCache implements interface.
-var _ aurora_test_auth.Cache = (*Cache)(nil)
+var _ cache.Cache = (*Cache)(nil)
 
 // Set key - value pairs in Redis Cache
 func (c *Cache) Set(ctx context.Context, key string, value string, expiration time.Duration) (string, error) {
