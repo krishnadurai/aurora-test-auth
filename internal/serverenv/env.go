@@ -1,0 +1,119 @@
+package serverenv
+
+import (
+	"context"
+	"crypto"
+	"fmt"
+
+	"github.com/krishnadurai/aurora-test-auth/internal/cache"
+	"github.com/krishnadurai/aurora-test-auth/internal/metrics"
+	"github.com/krishnadurai/aurora-test-auth/internal/secrets"
+	"github.com/krishnadurai/aurora-test-auth/internal/signing"
+)
+
+// ExporterFunc defines a factory function for creating a context aware metrics exporter.
+type ExporterFunc func(context.Context) metrics.Exporter
+
+// ServerEnv represents latent environment configuration for servers in this application.
+type ServerEnv struct {
+	cache         cache.Cache
+	exporter      metrics.ExporterFromContext
+	keyManager    signing.KeyManager
+	secretManager secrets.SecretManager
+}
+
+// Option defines function types to modify the ServerEnv on creation.
+type Option func(*ServerEnv) *ServerEnv
+
+// New creates a new ServerEnv with the requested options.
+func New(ctx context.Context, opts ...Option) *ServerEnv {
+	env := &ServerEnv{}
+	// A metrics exporter is required, installs the default log based one.
+	// Can be overridden by opts.
+	env.exporter = func(ctx context.Context) metrics.Exporter {
+		return metrics.NewLogsBasedFromContext(ctx)
+	}
+
+	for _, f := range opts {
+		env = f(env)
+	}
+
+	return env
+}
+
+// WithCache attached a database to the environment.
+func WithCache(cache cache.Cache) Option {
+	return func(s *ServerEnv) *ServerEnv {
+		s.cache = cache
+		return s
+	}
+}
+
+// WithMetricsExporter creates an Option to install a different metrics exporter.
+func WithMetricsExporter(f metrics.ExporterFromContext) Option {
+	return func(s *ServerEnv) *ServerEnv {
+		s.exporter = f
+		return s
+	}
+}
+
+// WithSecretManager creates an Option to install a specific secret manager to use.
+func WithSecretManager(sm secrets.SecretManager) Option {
+	return func(s *ServerEnv) *ServerEnv {
+		s.secretManager = sm
+		return s
+	}
+}
+
+// WithKeyManager creates an Option to install a specific KeyManager to use for signing requests.
+func WithKeyManager(km signing.KeyManager) Option {
+	return func(s *ServerEnv) *ServerEnv {
+		s.keyManager = km
+		return s
+	}
+}
+
+func (s *ServerEnv) SecretManager() secrets.SecretManager {
+	return s.secretManager
+}
+
+func (s *ServerEnv) KeyManager() signing.KeyManager {
+	return s.keyManager
+}
+
+func (s *ServerEnv) Cache() cache.Cache {
+	return s.cache
+}
+
+// GetSignerForKey returns the crypto.Singer implementation to use based on the installed KeyManager.
+// If there is no KeyManager installed, this returns an error.
+func (s *ServerEnv) GetSignerForKey(ctx context.Context, keyName string) (crypto.Signer, error) {
+	if s.keyManager == nil {
+		return nil, fmt.Errorf("no key manager installed, use WithKeyManager when creating the ServerEnv")
+	}
+	sign, err := s.keyManager.NewSigner(ctx, keyName)
+	if err != nil {
+		return nil, fmt.Errorf("KeyManager.NewSigner: %w", err)
+	}
+	return sign, nil
+}
+
+// MetricsExporter returns a context appropriate metrics exporter.
+func (s *ServerEnv) MetricsExporter(ctx context.Context) metrics.Exporter {
+	if s.exporter == nil {
+		return nil
+	}
+	return s.exporter(ctx)
+}
+
+// Close shuts down the server env, closing cache connections, etc.
+func (s *ServerEnv) Close(ctx context.Context) error {
+	if s == nil {
+		return nil
+	}
+
+	if s.cache != nil {
+		s.cache.Close(ctx)
+	}
+	return nil
+}
