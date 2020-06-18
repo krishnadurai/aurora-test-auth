@@ -3,11 +3,12 @@ package config
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
+
 	"github.com/krishnadurai/aurora-test-auth/internal/cache"
 	"github.com/krishnadurai/aurora-test-auth/internal/cache/redis"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
-	"path/filepath"
 )
 
 type Config struct {

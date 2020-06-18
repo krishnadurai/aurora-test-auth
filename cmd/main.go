@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+
 	"github.com/krishnadurai/aurora-test-auth/internal/cache"
 	"github.com/krishnadurai/aurora-test-auth/internal/config"
 	"github.com/krishnadurai/aurora-test-auth/internal/interrupt"

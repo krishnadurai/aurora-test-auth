@@ -2,9 +2,10 @@ package redis
 
 import (
 	"context"
+	"time"
+
 	"github.com/krishnadurai/aurora-test-auth/internal/cache"
 	"gopkg.in/yaml.v3"
-	"time"
 
 	redis "github.com/go-redis/redis/v8"
 	"github.com/krishnadurai/aurora-test-auth/internal/logging"
